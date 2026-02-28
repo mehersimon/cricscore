@@ -530,3 +530,25 @@ def leaderboard_page():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, port=5000)
+  import sqlite3
+from flask import session, redirect, url_for
+
+@app.route('/reset_match', methods=['POST'])
+def reset_match():
+    if not session.get("is_admin"):
+        return redirect(url_for("login"))
+
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    # Mark active match as completed (Professional way)
+    cursor.execute("""
+        UPDATE matches
+        SET result = 'Completed'
+        WHERE result = 'In Progress'
+    """)
+
+    conn.commit()
+    conn.close()
+
+    return redirect(url_for("dashboard"))

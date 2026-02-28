@@ -273,3 +273,14 @@ confettiStyle.textContent = `
 document.head.appendChild(confettiStyle);
 
 document.addEventListener('DOMContentLoaded', () => CS.init());
+const CS = {
+  resetMatch: function () {
+    if (confirm("Are you sure you want to clear the current match?")) {
+      fetch("/reset_match", {
+        method: "POST"
+      }).then(() => {
+        window.location.reload();
+      });
+    }
+  }
+};
