@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+{% set is_admin = is_admin %}
+{% block title %}Scoreboard — CricScore{% endblock %}
+{% block content %}
+
+{% if not match %}
+<div style="text-align:center;padding:5rem 2rem">
+  <div style="font-size:4rem;margin-bottom:1rem">🏏</div>
+  <h2 style="font-family:Orbitron;color:var(--muted)">No Active Match</h2>
+  <p style="color:var(--muted);margin:1rem 0">
+    {% if is_admin %}
+      <a href="/dashboard" class="btn btn-primary" style="margin-top:1rem">Start a Match</a>
+    {% else %}
+      <a href="/" class="btn btn-outline">← Back to Home</a>
+    {% endif %}
+  </p>
+</div>
+{% else %}
+
+<div class="page-layout">
+
+  <!-- LEFT: Scoreboard -->
+  <div>
+    <!-- Main Score Display -->
+    <div class="scoreboard-main" style="margin:0 0 1.5rem">
+      <div class="scoreboard-header">
+        <div class="match-teams">
+          <span>{{ match.team1 }}</span>
+          <span class="vs">VS</span>
+          <span>{{ match.team2 }}</span>
+        </div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:1rem;margin-bottom:0.5rem">
+          {% if match.result == 'In Progress' %}
+            <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+          {% endif %}
+          <span style="color:var(--muted);font-family:Rajdhani;font-size:0.85rem;letter-spacing:2px">{{ match.overs }} OVERS MATCH</span>
+        </div>
+
+        {% if match.innings == 2 %}
+        <div style="background:rgba(255,145,0,0.1);border:1px solid rgba(255,145,0,0.3);border-radius:8px;padding:8px 16px;margin:0.5rem auto;display:inline-block">
+          <span style="color:var(--orange);font-family:Rajdhani;font-weight:700;letter-spacing:1px">
+            TARGET: {{ match.target }} | {{ match.current_batting_team }} need
+            <span id="runs-needed">{{ match.target - match.team2_score }}</span> more
+          </span>
+        </div>
+        {% endif %}
+
+        {% if match.innings == 1 %}
+          <div class="score-display" id="score-display">{{ match.team1_score }}/{{ match.team1_wickets }}</div>
+        {% else %}
+          <div class="score-display" id="score-display">{{ match.team2_score }}/{{ match.team2_wickets }}</div>
+        {% endif %}
+
+        <div class="score-meta">
+          <div class="score-meta-item">
+            <div class="label">Overs</div>
+            <div class="value" id="overs-val">
+              {% if match.innings == 1 %}{{ match.team1_balls // 6 }}.{{ match.team1_balls % 6 }}
+              {% else %}{{ match.team2_balls // 6 }}.{{ match.team2_balls % 6 }}{% endif %}
+              / {{ match.overs }}
+            </div>
+          </div>
+          <div class="score-meta-item">
+            <div class="label">Run Rate</div>
+            <div class="value" id="rr-val">
+              {% set balls = match.team1_balls if match.innings == 1 else match.team2_balls %}
+              {% set score = match.team1_score if match.innings == 1 else match.team2_score %}
+              {% if balls > 0 %}{{ "%.2f"|format(score / (balls/6)) }}{% else %}0.00{% endif %}
+            </div>
+          </div>
+          <div class="score-meta-item">
+            <div class="label">Extras</div>
+            <div class="value" id="extras-val">{{ match.extras }}</div>
+          </div>
+          <div class="score-meta-item">
+            <div class="label">Innings</div>
+            <div class="value" id="innings-label">{{ match.innings }}</div>
+          </div>
+        </div>
+      </div>
+
+      {% if match.innings == 2 %}
+      <div style="padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.2)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:Rajdhani;font-size:0.85rem;letter-spacing:2px;color:var(--muted);text-transform:uppercase">1st Innings</span>
+          <span style="font-family:Orbitron;color:var(--gold)">{{ match.team1 }}: {{ match.team1_score }}/{{ match.team1_wickets }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-val">{{ match.wides }}</div>
+          <div class="stat-label">Wides</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">{{ match.no_balls }}</div>
+          <div class="stat-label">No Balls</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">{{ match.overs }}</div>
+          <div class="stat-label">Total Overs</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">
+            {% if match.innings == 1 %}
+              {% set b = match.team1_balls %}{{ (match.overs * 6) - b }}
+            {% else %}
+              {% set b = match.team2_balls %}{{ (match.overs * 6) - b }}
+            {% endif %}
+          </div>
+          <div class="stat-label">Balls Left</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batting Stats -->
+    {% if team1_players %}
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-header">
+        <span class="card-title">🏏 Batting — {{ match.team1 if match.innings == 1 else match.team2 }}</span>
+      </div>
+      <table class="stats-table">
+        <thead>
+          <tr>
+            <th>Batsman</th>
+            <th class="num-cell">R</th>
+            <th class="num-cell">B</th>
+            <th class="num-cell">4s</th>
+            <th class="num-cell">6s</th>
+            <th class="num-cell">SR</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set bat_players = team1_players if match.innings == 1 else team2_players %}
+          {% for p in bat_players %}
+          {% if p.balls > 0 or p.is_out %}
+          <tr>
+            <td class="{{ 'player-out' if p.is_out else 'player-batting' }}">
+              {{ p.player_name }}
+              {% if p.is_out %}<span style="font-size:0.75rem;color:var(--red)"> †</span>{% endif %}
+            </td>
+            <td class="num-cell">{{ p.runs }}</td>
+            <td class="num-cell">{{ p.balls }}</td>
+            <td class="num-cell" style="color:#42a5f5">{{ p.fours }}</td>
+            <td class="num-cell" style="color:var(--gold)">{{ p.sixes }}</td>
+            <td class="num-cell">
+              {% if p.balls > 0 %}{{ "%.1f"|format((p.runs / p.balls) * 100) }}{% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <!-- Result Banner -->
+    <div id="result-container">
+      {% if match.result != 'In Progress' %}
+      <div class="result-banner">
+        <div style="font-size:2rem;margin-bottom:8px">🏆</div>
+        <div class="result-text">{{ match.result }}</div>
+        <div style="color:var(--muted);margin-top:8px;font-family:Rajdhani;letter-spacing:1px">MATCH COMPLETE</div>
+        {% if is_admin %}
+        <div style="margin-top:1rem">
+          <a href="/dashboard" class="btn btn-primary btn-sm">New Match</a>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Control Panel / Public Info -->
+  <div>
+
+    {% if is_admin and match.result == 'In Progress' %}
+    <!-- ADMIN CONTROL PANEL -->
+    <div class="control-panel" style="margin-bottom:1.5rem">
+      <div class="section-title">🎮 Match Control</div>
+
+      <div class="form-group">
+        <label class="form-label">Current Batsman</label>
+        <div class="select-wrapper">
+          <select id="batsman-select">
+            <option value="">— Select Batsman —</option>
+            {% for p in players_bat %}
+            {% if not p.is_out %}
+            <option value="{{ p.id }}" {{ 'selected' if current_batsman and current_batsman.id == p.id }}>
+              {{ p.player_name }}{% if p.balls > 0 %} ({{ p.runs }} off {{ p.balls }}){% endif %}
+            </option>
+            {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Current Bowler</label>
+        <div class="select-wrapper">
+          <select id="bowler-select">
+            <option value="">— Select Bowler —</option>
+            {% for p in players_bowl %}
+            <option value="{{ p.id }}" {{ 'selected' if current_bowler and current_bowler.id == p.id }}>
+              {{ p.player_name }}{% if p.wickets > 0 %} ({{ p.wickets }}W){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:1.25rem">⚡ Ball Events</div>
+      <div class="event-buttons">
+        <button class="event-btn run-0" onclick="CS.sendEvent('0')" data-key="0">
+          0<span class="sub">dot ball</span>
+        </button>
+        <button class="event-btn run-1" onclick="CS.sendEvent('1')" data-key="1">
+          1<span class="sub">run</span>
+        </button>
+        <button class="event-btn run-2" onclick="CS.sendEvent('2')" data-key="2">
+          2<span class="sub">runs</span>
+        </button>
+        <button class="event-btn run-3" onclick="CS.sendEvent('3')" data-key="3">
+          3<span class="sub">runs</span>
+        </button>
+        <button class="event-btn run-4" onclick="CS.sendEvent('4')" data-key="4">
+          4<span class="sub">boundary</span>
+        </button>
+        <button class="event-btn run-6" onclick="CS.sendEvent('6')" data-key="6">
+          6<span class="sub">six!</span>
+        </button>
+        <button class="event-btn wicket" onclick="CS.sendEvent('wicket')" data-key="w">
+          W<span class="sub">wicket</span>
+        </button>
+        <button class="event-btn wide" onclick="CS.sendEvent('wide')" data-key="e">
+          Wd<span class="sub">wide</span>
+        </button>
+        <button class="event-btn no-ball" onclick="CS.sendEvent('no_ball')" data-key="n">
+          Nb<span class="sub">no ball</span>
+        </button>
+      </div>
+
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <div class="section-title">📋 This Over</div>
+        <div id="ball-track" class="ball-track" style="overflow-x:auto;flex-wrap:nowrap;padding:4px 0"></div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <button onclick="CS.resetMatch()" class="btn btn-danger btn-sm">🔄 Reset Match</button>
+      </div>
+    </div>
+
+    <!-- Current Batsman Quick Stats -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-header"><span class="card-title">At Crease</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div class="stat-box">
+          <div class="stat-val" id="bat-runs">—</div>
+          <div class="stat-label"><span id="bat-name">Batsman</span></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="bat-sr">—</div>
+          <div class="stat-label">Strike Rate</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="bat-balls" style="color:var(--muted)">—</div>
+          <div class="stat-label">Balls</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="bat-fours" style="color:#42a5f5">—</div>
+          <div class="stat-label">Fours</div>
+        </div>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- PUBLIC VIEW INFO -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div class="card-header"><span class="card-title">📡 Live Commentary</span></div>
+      <div id="commentary" style="font-family:Rajdhani;color:var(--muted);font-size:0.9rem;line-height:1.8">
+        <div style="text-align:center;padding:1rem">
+          <div style="font-size:2rem;margin-bottom:0.5rem">📺</div>
+          Auto-refreshing every 5 seconds...
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Bowler Stats -->
+    {% set bowl_players = team2_players if match.innings == 1 else team1_players %}
+    {% if bowl_players %}
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🎯 Bowling — {{ match.team2 if match.innings == 1 else match.team1 }}</span>
+      </div>
+      <table class="stats-table">
+        <thead><tr>
+          <th>Bowler</th>
+          <th class="num-cell">W</th>
+        </tr></thead>
+        <tbody>
+          {% for p in bowl_players %}
+          {% if p.wickets > 0 %}
+          <tr>
+            <td>{{ p.player_name }}</td>
+            <td class="num-cell" style="color:var(--red)">{{ p.wickets }}</td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Initialize current batsman stats if available
+  {% if current_batsman and current_batsman.balls > 0 %}
+  document.getElementById('bat-name').textContent = '{{ current_batsman.player_name }}';
+  document.getElementById('bat-runs').textContent = '{{ current_batsman.runs }}';
+  document.getElementById('bat-balls').textContent = '{{ current_batsman.balls }}';
+  document.getElementById('bat-sr').textContent = '{{ "%.1f"|format((current_batsman.runs / current_batsman.balls) * 100) if current_batsman.balls > 0 else 0 }}';
+  document.getElementById('bat-fours').textContent = '{{ current_batsman.fours }}';
+  {% endif %}
+</script>
+{% endblock %}

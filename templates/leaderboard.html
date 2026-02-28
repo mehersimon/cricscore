@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% set is_admin = false %}
+{% block title %}Leaderboard — CricScore{% endblock %}
+{% block content %}
+
+<div class="container" style="padding:2rem 2rem 4rem">
+  <div class="section-header">
+    <h2>🏆 Leaderboard</h2>
+    <a href="/scoreboard" class="btn btn-outline btn-sm">📺 Live Match</a>
+  </div>
+
+  <div id="leaderboard-data">
+    <div style="text-align:center;padding:3rem;color:var(--muted)">
+      <div class="spinner" style="margin:0 auto 1rem"></div>
+      <p>Loading leaderboard...</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => CS.loadLeaderboard());
+</script>
+{% endblock %}

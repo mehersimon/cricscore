@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% set is_admin = is_admin %}
+{% block title %}CricScore — Live Cricket Simulation{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-badge">
+    <span class="live-dot"></span>
+    Live Cricket Simulation Platform
+  </div>
+  <h1>CricScore</h1>
+  <p>Real-time cricket scoring, simulation & match management system</p>
+  <div class="hero-actions">
+    <a href="/scoreboard" class="btn btn-primary btn-lg">📺 Live Scoreboard</a>
+    {% if is_admin %}
+      <a href="/dashboard" class="btn btn-gold btn-lg">⚙️ Admin Panel</a>
+    {% else %}
+      <a href="/login" class="btn btn-outline btn-lg">🔐 Admin Login</a>
+    {% endif %}
+  </div>
+</section>
+
+<div class="container" style="padding-bottom:3rem">
+
+  {% if active_match %}
+  <div class="card" style="max-width:700px;margin:0 auto 2rem;text-align:center">
+    <div class="card-header" style="justify-content:center;gap:1rem">
+      <span class="live-badge"><span class="live-dot"></span> LIVE MATCH</span>
+    </div>
+    <div class="match-teams">
+      <span>{{ active_match.team1 }}</span>
+      <span class="vs">VS</span>
+      <span>{{ active_match.team2 }}</span>
+    </div>
+    <div style="color:var(--muted);font-size:0.9rem;margin:0.5rem 0">{{ active_match.overs }}-over match • Format: {{ active_match.format|upper }}</div>
+    {% set inn = active_match.innings %}
+    {% if inn == 1 %}
+      <div class="score-display" style="margin:0.5rem 0">{{ active_match.team1_score }}/{{ active_match.team1_wickets }}</div>
+      <div style="color:var(--muted);font-family:Rajdhani;font-size:0.9rem;letter-spacing:1px">
+        OVERS: {{ active_match.team1_balls // 6 }}.{{ active_match.team1_balls % 6 }} / {{ active_match.overs }}
+      </div>
+    {% else %}
+      <div class="score-display" style="margin:0.5rem 0">{{ active_match.team2_score }}/{{ active_match.team2_wickets }}</div>
+      <div style="color:var(--orange);font-family:Rajdhani;font-size:0.9rem;letter-spacing:1px;margin-bottom:4px">
+        TARGET: {{ active_match.target }} | NEED: {{ active_match.target - active_match.team2_score }} MORE
+      </div>
+      <div style="color:var(--muted);font-family:Rajdhani;font-size:0.9rem;letter-spacing:1px">
+        OVERS: {{ active_match.team2_balls // 6 }}.{{ active_match.team2_balls % 6 }} / {{ active_match.overs }}
+      </div>
+      <div style="color:var(--muted);font-family:Rajdhani;font-size:0.8rem;margin-top:4px;letter-spacing:1px">
+        {{ active_match.team1 }}: {{ active_match.team1_score }}/{{ active_match.team1_wickets }}
+      </div>
+    {% endif %}
+    <div style="margin-top:1.5rem">
+      <a href="/scoreboard" class="btn btn-primary">View Full Scoreboard →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="section-header">
+    <h2>Recent Matches</h2>
+    {% if is_admin %}
+    <a href="/dashboard" class="btn btn-outline btn-sm">+ New Match</a>
+    {% endif %}
+  </div>
+
+  {% if matches %}
+    <div style="display:flex;flex-direction:column;gap:0.75rem;max-width:700px">
+      {% for m in matches %}
+      <div class="match-history-item">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="match-history-teams">🏏 {{ m.team1 }} <span style="color:var(--muted);font-weight:400">vs</span> {{ m.team2 }}</div>
+            <div class="match-history-result">
+              {% if m.result == 'In Progress' %}
+                <span class="live-badge" style="display:inline-flex;"><span class="live-dot"></span> LIVE</span>
+              {% else %}
+                {{ m.result }}
+              {% endif %}
+            </div>
+            <div class="match-history-date">{{ m.overs }} overs • {{ m.created_at }}</div>
+          </div>
+          <div style="text-align:right;font-family:Rajdhani">
+            <div style="color:var(--white)">{{ m.team1 }}: {{ m.team1_score }}/{{ m.team1_wickets }}</div>
+            <div style="color:var(--muted);font-size:0.85rem">{{ m.team2 }}: {{ m.team2_score }}/{{ m.team2_wickets }}</div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align:center;padding:3rem;color:var(--muted)">
+      <div style="font-size:3rem;margin-bottom:1rem">🏏</div>
+      <p>No matches yet. <a href="{% if is_admin %}/dashboard{% else %}/login{% endif %}" style="color:var(--green-vivid)">Start one!</a></p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

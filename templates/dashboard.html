@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% set is_admin = true %}
+{% block title %}Dashboard — CricScore{% endblock %}
+{% block content %}
+
+<div class="container" style="padding:2rem 2rem 4rem">
+
+  <div class="section-header">
+    <h2>⚙️ Admin Dashboard</h2>
+    <div style="display:flex;gap:0.75rem">
+      {% if active_match %}
+        <a href="/scoreboard" class="btn btn-primary btn-sm">📺 Live Match</a>
+        <button onclick="CS.resetMatch()" class="btn btn-danger btn-sm">🔄 Reset Match</button>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if active_match %}
+  <div class="card" style="max-width:600px;margin-bottom:2rem;background:rgba(0,230,118,0.04);border-color:rgba(0,230,118,0.3)">
+    <div class="card-header">
+      <span class="card-title">Active Match</span>
+      <span class="live-badge"><span class="live-dot"></span> In Progress</span>
+    </div>
+    <div class="match-teams" style="font-size:1.2rem">
+      <span>{{ active_match.team1 }}</span>
+      <span class="vs">VS</span>
+      <span>{{ active_match.team2 }}</span>
+    </div>
+    <div style="color:var(--muted);font-size:0.9rem;margin-top:0.5rem;font-family:Rajdhani;letter-spacing:1px">
+      {{ active_match.overs }} Overs • Innings {{ active_match.innings }}
+    </div>
+    <div style="margin-top:1rem">
+      <a href="/scoreboard" class="btn btn-primary">Go to Scoreboard →</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card" style="max-width:600px">
+    <div class="card-header">
+      <span class="card-title">🏏 New Match Setup</span>
+    </div>
+
+    <form action="/setup_match" method="POST">
+      <div class="form-group">
+        <label class="form-label">Match Format</label>
+        <div class="format-toggle">
+          <label class="format-option">
+            <input type="radio" name="format" value="real" checked>
+            <div class="format-label">
+              <span class="format-icon">🏟️</span>
+              <div class="format-name">Real Cricket</div>
+              <div class="format-desc">11 Players</div>
+            </div>
+          </label>
+          <label class="format-option">
+            <input type="radio" name="format" value="short">
+            <div class="format-label">
+              <span class="format-icon">⚡</span>
+              <div class="format-name">Short Circle</div>
+              <div class="format-desc">9 Players</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label" for="team1">Team 1 Name</label>
+          <input type="text" id="team1" name="team1" class="form-input"
+            placeholder="e.g. India" required maxlength="30">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="team2">Team 2 Name</label>
+          <input type="text" id="team2" name="team2" class="form-input"
+            placeholder="e.g. Australia" required maxlength="30">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="overs-input">Number of Overs</label>
+        <input type="number" id="overs-input" name="overs" class="form-input"
+          value="20" min="1" max="50" required>
+        <div style="color:var(--muted);font-size:0.8rem;margin-top:6px;font-family:Rajdhani">
+          Standard: T20 = 20 | ODI = 50 | T10 = 10
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block btn-lg">
+        🚀 Start Match
+      </button>
+    </form>
+  </div>
+
+  <!-- Quick info -->
+  <div class="three-col" style="margin-top:2rem;max-width:600px">
+    <div class="card" style="text-align:center">
+      <div style="font-size:1.5rem">🎯</div>
+      <div style="font-family:Rajdhani;font-weight:700;color:var(--green-vivid);margin-top:8px">Ball Events</div>
+      <div style="color:var(--muted);font-size:0.8rem;margin-top:4px">0,1,2,3,4,6, Wicket, Wide, No Ball</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:1.5rem">📊</div>
+      <div style="font-family:Rajdhani;font-weight:700;color:var(--gold);margin-top:8px">Auto Stats</div>
+      <div style="color:var(--muted);font-size:0.8rem;margin-top:4px">SR, RR, Extras, Results</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:1.5rem">🏆</div>
+      <div style="font-family:Rajdhani;font-weight:700;color:var(--orange);margin-top:8px">Auto Winner</div>
+      <div style="color:var(--muted);font-size:0.8rem;margin-top:4px">Declared automatically</div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

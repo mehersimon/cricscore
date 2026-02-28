@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CricScore{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body data-admin="{{ 'true' if is_admin else 'false' }}">
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <span class="logo-icon">🏏</span>
+      <span class="logo-text">CricScore</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="{{ 'active' if request.endpoint == 'index' else '' }}">Home</a></li>
+      <li><a href="/scoreboard" class="{{ 'active' if request.endpoint == 'scoreboard' else '' }}">Scoreboard</a></li>
+      <li><a href="/leaderboard" class="{{ 'active' if request.endpoint == 'leaderboard_page' else '' }}">Leaderboard</a></li>
+      {% if is_admin %}
+        <li><a href="/dashboard" class="{{ 'active' if request.endpoint == 'dashboard' else '' }}">Dashboard</a></li>
+        <li><a href="/logout">Logout</a></li>
+      {% else %}
+        <li><a href="/login" class="btn-nav-login {{ 'active' if request.endpoint == 'login' else '' }}">Admin Login</a></li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer>
+  <p>🏏 <span>CricScore</span> — Cricket Simulation & Management System &nbsp;|&nbsp; Built with Flask + SQLite</p>
+</footer>
+
+<div id="global-toast" class="toast"></div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
